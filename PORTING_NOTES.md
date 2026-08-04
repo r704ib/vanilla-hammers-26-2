@@ -95,7 +95,14 @@ plus d'erreurs, sur des points plus variés, que pour Adabranium.
 - `Entity.setSecondsOnFire(int)` n'existe plus → remplacé par `Entity.igniteForSeconds(int)`
   (best-effort, pas confirmé ailleurs — repose sur le prochain retour de compilation).
 - `Level.getRecipeManager()` n'existe plus sur `ServerLevel` → remplacé par
-  `serverLevel.getServer().getRecipeManager()` (best-effort, pas confirmé ailleurs).
+  `serverLevel.getServer().getRecipeManager()` (best-effort, pas confirmé ailleurs). **Confirmé bon**
+  par le 2e retour (voir ci-dessous, plus d'erreur dessus).
+
+**2e retour (3 erreurs, toutes dans la même méthode `smelt()`)** :
+
+- `SmeltingRecipe.assemble(SingleRecipeInput, RegistryAccess)` n'existe plus avec 2 arguments →
+  `assemble(SingleRecipeInput)` seul. Corrigé ; les 2 autres erreurs (`isEmpty()`/`copy()` introuvables
+  sur `Object`) étaient une simple conséquence en cascade de celle-ci et se sont résolues avec.
 
 ## Versions retenues
 

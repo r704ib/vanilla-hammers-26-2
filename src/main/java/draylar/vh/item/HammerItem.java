@@ -129,7 +129,7 @@ public class HammerItem extends Item {
         // 26.2 path unconfirmed (best guess) - flagged in PORTING_NOTES.md.
         return level.getServer().getRecipeManager()
                 .getRecipeFor(RecipeType.SMELTING, new SingleRecipeInput(input), level)
-                .map(holder -> holder.value().assemble(new SingleRecipeInput(input), level.registryAccess()))
+                .map(holder -> holder.value().assemble(new SingleRecipeInput(input)))
                 .filter(result -> !result.isEmpty())
                 .map(result -> {
                     ItemStack copy = result.copy();
