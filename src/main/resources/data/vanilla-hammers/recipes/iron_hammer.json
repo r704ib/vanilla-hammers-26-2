@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "tools",
+  "pattern": [
+    "DdD",
+    " s ",
+    " s "
+  ],
+  "key": {
+    "D": "minecraft:iron_block",
+    "d": "minecraft:iron_ingot",
+    "s": "minecraft:stick"
+  },
+  "result": {
+    "id": "vanilla-hammers:iron_hammer"
+  }
+}

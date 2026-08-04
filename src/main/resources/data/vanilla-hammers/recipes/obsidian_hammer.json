@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "tools",
+  "pattern": [
+    "DDD",
+    "DsD",
+    " s "
+  ],
+  "key": {
+    "D": "minecraft:obsidian",
+    "s": "minecraft:stick"
+  },
+  "result": {
+    "id": "vanilla-hammers:obsidian_hammer"
+  }
+}

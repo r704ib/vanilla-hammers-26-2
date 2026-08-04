@@ -1,0 +1,174 @@
+package draylar.vh.data;
+
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import draylar.vh.VanillaHammers;
+import draylar.vh.item.HammerItem;
+import net.fabricmc.fabric.api.registry.FuelRegistry;
+import net.fabricmc.loader.api.FabricLoader;
+import net.fabricmc.loader.api.ModContainer;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.Identifier;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ToolMaterial;
+import net.minecraft.world.level.block.Block;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Stream;
+
+/**
+ * Loads {@code static_data/vanilla-hammers/hammers/*.json} from every loaded mod (this one and
+ * any other mod that ships hammer definitions in the same convention, e.g. Adabranium) and
+ * registers the corresponding hammer items.
+ * <p>
+ * This replaces the original mod's dependency on the (unmaintained) "StaticData" library, which
+ * did the same cross-mod scan-and-load at mod-init time, before resources/tags are available.
+ */
+public final class HammerData {
+
+    private static final String STATIC_DATA_PATH = "static_data/vanilla-hammers/hammers";
+
+    /** Every hammer, regardless of material, shares this tag for anvil repair (simplified vs. upstream - see PORTING_NOTES.md). */
+    public static final TagKey<Item> REPAIRABLE = TagKey.create(Registries.ITEM, VanillaHammers.id("repairable"));
+
+    public final String id;
+    public final int miningLevel;
+    public final int durability;
+    public final float blockBreakSpeed;
+    public final float attackDamage;
+    public final float attackSpeed;
+    public final int enchantability;
+    public final boolean isFireImmune;
+    public final boolean smelts;
+    public final int breakRadius;
+    public final boolean isExtra;
+    public final int burnTime;
+    public final boolean hasExtraKnockback;
+
+    /** Every hammer registered so far, in registration order - used to populate the creative tab. */
+    public static final List<Item> ALL = new ArrayList<>();
+
+    private HammerData(JsonObject json) {
+        this.id = getString(json, "id", "");
+        this.miningLevel = getInt(json, "miningLevel", 0);
+        this.durability = getInt(json, "durability", 500);
+        this.blockBreakSpeed = getFloat(json, "blockBreakSpeed", 1.0f);
+        this.attackDamage = getFloat(json, "attackDamage", 4.0f);
+        this.attackSpeed = getFloat(json, "attackSpeed", -2.4f);
+        this.enchantability = getInt(json, "enchantability", 15);
+        this.isFireImmune = getBoolean(json, "isFireImmune", false);
+        this.smelts = getBoolean(json, "smelts", false);
+        this.breakRadius = getInt(json, "breakRadius", 1);
+        this.isExtra = getBoolean(json, "isExtra", false);
+        this.burnTime = getInt(json, "burnTime", 0);
+        this.hasExtraKnockback = getBoolean(json, "hasExtraKnockback", false);
+    }
+
+    /** Scans every loaded mod's jar/dev-source-set for hammer definitions and registers them all. */
+    public static void loadAndRegisterAll() {
+        for (ModContainer mod : FabricLoader.getInstance().getAllMods()) {
+            for (Path root : mod.getRootPaths()) {
+                Path hammersDir = root.resolve(STATIC_DATA_PATH);
+
+                if (!Files.isDirectory(hammersDir)) {
+                    continue;
+                }
+
+                try (Stream<Path> files = Files.list(hammersDir)) {
+                    files.filter(p -> p.toString().endsWith(".json")).forEach(HammerData::loadAndRegister);
+                } catch (IOException e) {
+                    VanillaHammers.LOGGER.warn("Failed to list hammer data in {} from mod {}", hammersDir, mod.getMetadata().getId(), e);
+                }
+            }
+        }
+    }
+
+    private static void loadAndRegister(Path file) {
+        try (Reader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
+            JsonElement element = JsonParser.parseReader(reader);
+            new HammerData(element.getAsJsonObject()).register();
+        } catch (Exception e) {
+            VanillaHammers.LOGGER.error("Failed to load hammer data from {}", file, e);
+        }
+    }
+
+    private void register() {
+        if (id.isEmpty() || (isExtra && !VanillaHammers.CONFIG.enableExtraMaterials)) {
+            return;
+        }
+
+        String path = id + "_hammer";
+        ResourceKey<Item> key = ResourceKey.create(Registries.ITEM, path.contains(":") ? Identifier.parse(path) : VanillaHammers.id(path));
+
+        ToolMaterial material = new ToolMaterial(
+                incorrectBlocksTag(miningLevel),
+                durability * VanillaHammers.CONFIG.durabilityModifier,
+                blockBreakSpeed * (float) VanillaHammers.CONFIG.breakSpeedMultiplier,
+                attackDamage,
+                enchantability,
+                REPAIRABLE
+        );
+
+        Item.Properties settings = new Item.Properties().setId(key).stacksTo(1);
+        if (isFireImmune) {
+            settings = settings.fireResistant();
+        }
+
+        HammerItem hammer = new HammerItem(material, settings, breakRadius == 0 ? 1 : breakRadius, this);
+        Registry.register(BuiltInRegistries.ITEM, key, hammer);
+        ALL.add(hammer);
+
+        if (burnTime > 0) {
+            FuelRegistry.INSTANCE.add(hammer, burnTime);
+        }
+    }
+
+    public boolean canSmelt() {
+        return smelts;
+    }
+
+    public boolean hasExtraKnockback() {
+        return hasExtraKnockback;
+    }
+
+    /**
+     * Best-effort mapping from the original mod's 0-4 "mining level" to a vanilla "incorrect for X
+     * tool" block tag - unconfirmed against a real 26.2 build, see PORTING_NOTES.md.
+     */
+    private static TagKey<Block> incorrectBlocksTag(int miningLevel) {
+        return switch (miningLevel) {
+            case 0 -> BlockTags.INCORRECT_FOR_STONE_TOOL;
+            case 1 -> BlockTags.INCORRECT_FOR_IRON_TOOL;
+            case 2 -> BlockTags.INCORRECT_FOR_DIAMOND_TOOL;
+            default -> BlockTags.INCORRECT_FOR_NETHERITE_TOOL;
+        };
+    }
+
+    private static String getString(JsonObject json, String key, String fallback) {
+        return json.has(key) ? json.get(key).getAsString() : fallback;
+    }
+
+    private static int getInt(JsonObject json, String key, int fallback) {
+        return json.has(key) ? json.get(key).getAsInt() : fallback;
+    }
+
+    private static float getFloat(JsonObject json, String key, float fallback) {
+        return json.has(key) ? json.get(key).getAsFloat() : fallback;
+    }
+
+    private static boolean getBoolean(JsonObject json, String key, boolean fallback) {
+        return json.has(key) ? json.get(key).getAsBoolean() : fallback;
+    }
+}

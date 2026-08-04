@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "tools",
+  "pattern": [
+    "DdD",
+    " s ",
+    " s "
+  ],
+  "key": {
+    "D": "minecraft:lapis_block",
+    "d": "minecraft:lapis_lazuli",
+    "s": "minecraft:stick"
+  },
+  "result": {
+    "id": "vanilla-hammers:lapis_hammer"
+  }
+}

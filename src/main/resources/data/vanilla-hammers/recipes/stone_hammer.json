@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "tools",
+  "pattern": [
+    "DdD",
+    " s ",
+    " s "
+  ],
+  "key": {
+    "D": "minecraft:stone",
+    "d": "minecraft:cobblestone",
+    "s": "minecraft:stick"
+  },
+  "result": {
+    "id": "vanilla-hammers:stone_hammer"
+  }
+}

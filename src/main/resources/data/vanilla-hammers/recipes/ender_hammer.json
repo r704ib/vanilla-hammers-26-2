@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "tools",
+  "pattern": [
+    "DdD",
+    " s ",
+    " s "
+  ],
+  "key": {
+    "D": "minecraft:end_stone_bricks",
+    "d": "minecraft:dragon_head",
+    "s": "minecraft:obsidian"
+  },
+  "result": {
+    "id": "vanilla-hammers:ender_hammer"
+  }
+}

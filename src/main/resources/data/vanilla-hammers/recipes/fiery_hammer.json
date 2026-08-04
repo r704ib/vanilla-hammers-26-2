@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "tools",
+  "pattern": [
+    "DdD",
+    " s ",
+    " s "
+  ],
+  "key": {
+    "D": "minecraft:magma_block",
+    "d": "minecraft:magma_cream",
+    "s": "minecraft:obsidian"
+  },
+  "result": {
+    "id": "vanilla-hammers:fiery_hammer"
+  }
+}
