@@ -104,6 +104,11 @@ plus d'erreurs, sur des points plus variés, que pour Adabranium.
   `assemble(SingleRecipeInput)` seul. Corrigé ; les 2 autres erreurs (`isEmpty()`/`copy()` introuvables
   sur `Object`) étaient une simple conséquence en cascade de celle-ci et se sont résolues avec.
 
+**3e retour : `BUILD SUCCESSFUL`.** Ça compile. Reste à vérifier en jeu (`./gradlew runClient`) — voir
+la liste des points "best-effort" ci-dessus, aucun ne casse la compilation mais certains pourraient
+avoir un comportement différent de ce qui est documenté (mapping des niveaux de minage, Silk Touch non
+filtré, knockback simplifié...).
+
 ## Versions retenues
 
 Mêmes versions que le portage Adabranium (déjà confirmées par une compilation + un lancement
