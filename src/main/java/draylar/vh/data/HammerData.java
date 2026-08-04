@@ -5,7 +5,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import draylar.vh.VanillaHammers;
 import draylar.vh.item.HammerItem;
-import net.fabricmc.fabric.api.registry.FuelRegistry;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.ModContainer;
 import net.minecraft.core.Registry;
@@ -59,6 +58,10 @@ public final class HammerData {
 
     /** Every hammer registered so far, in registration order - used to populate the creative tab. */
     public static final List<Item> ALL = new ArrayList<>();
+
+    /** {@code (item, burnTime)} pairs collected during registration, consumed once by FuelValueEvents.BUILD in VanillaHammers. */
+    public record FuelEntry(Item item, int burnTime) {}
+    public static final List<FuelEntry> FUEL_ENTRIES = new ArrayList<>();
 
     private HammerData(JsonObject json) {
         this.id = getString(json, "id", "");
@@ -131,7 +134,7 @@ public final class HammerData {
         ALL.add(hammer);
 
         if (burnTime > 0) {
-            FuelRegistry.INSTANCE.add(hammer, burnTime);
+            FUEL_ENTRIES.add(new FuelEntry(hammer, burnTime));
         }
     }
 

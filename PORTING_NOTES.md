@@ -79,6 +79,24 @@ plus d'erreurs, sur des points plus variés, que pour Adabranium.
   `minecraft:smithing` vers `minecraft:smithing_transform` avec un emplacement de gabarit — confirmé
   via une recette générée par Adabranium avec le même type).
 
+## Journal des erreurs de compilation réelles
+
+**1er retour (5 erreurs)** — bien moins que redouté vu l'ampleur de la réécriture :
+
+- `FuelRegistry` n'existe plus — confirmé via `fabric-docs` : remplacé par un système à base
+  d'événement, `FuelValueEvents.BUILD.register((builder, context) -> builder.add(item, ticks))`.
+  Comme nos marteaux sont enregistrés dynamiquement (potentiellement en plusieurs fois, y compris
+  depuis d'autres mods), les entrées "combustible" sont maintenant collectées dans
+  `HammerData.FUEL_ENTRIES` pendant l'enregistrement, puis un seul callback `FuelValueEvents.BUILD`
+  les consomme toutes d'un coup dans `VanillaHammers.onInitialize()`.
+- `BuiltInRegistries.ITEM.get(Identifier)` retourne maintenant `Optional<Holder.Reference<Item>>`
+  (avant : l'item directement) — corrigé avec `.map(Holder.Reference::value).orElse(...)`, déduit
+  directement du message d'erreur du compilateur (pas une supposition).
+- `Entity.setSecondsOnFire(int)` n'existe plus → remplacé par `Entity.igniteForSeconds(int)`
+  (best-effort, pas confirmé ailleurs — repose sur le prochain retour de compilation).
+- `Level.getRecipeManager()` n'existe plus sur `ServerLevel` → remplacé par
+  `serverLevel.getServer().getRecipeManager()` (best-effort, pas confirmé ailleurs).
+
 ## Versions retenues
 
 Mêmes versions que le portage Adabranium (déjà confirmées par une compilation + un lancement

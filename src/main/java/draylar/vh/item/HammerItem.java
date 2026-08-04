@@ -125,7 +125,9 @@ public class HammerItem extends Item {
     }
 
     private static ItemStack smelt(ServerLevel level, ItemStack input) {
-        return level.getRecipeManager()
+        // NOTE: RecipeManager access moved off Level onto the server in a past version - exact
+        // 26.2 path unconfirmed (best guess) - flagged in PORTING_NOTES.md.
+        return level.getServer().getRecipeManager()
                 .getRecipeFor(RecipeType.SMELTING, new SingleRecipeInput(input), level)
                 .map(holder -> holder.value().assemble(new SingleRecipeInput(input), level.registryAccess()))
                 .filter(result -> !result.isEmpty())
