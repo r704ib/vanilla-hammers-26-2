@@ -225,14 +225,23 @@ les 3 recettes vibranium/adamantium/nether contribuées à Vanilla Hammers) avec
 ## Réparation à l'enclume impossible (confirmé par un test réel) et corrigée
 
 Le tag `vanilla-hammers:repairable` et le `ToolMaterial` de chaque marteau étaient corrects, mais rien
-ne les reliait jamais à un comportement réel en jeu. En vanilla, la réparation à l'enclume à partir du
-tag de réparation d'un `ToolMaterial` est fournie par `TieredItem.isValidRepairItem()` - or
-`HammerItem` étend `Item` directement (pas `TieredItem`), à cause de la logique de minage custom, donc
-il hérite du défaut de `Item.isValidRepairItem()` qui renvoie toujours `false`. Corrigé en surchargeant
-`isValidRepairItem()` sur `HammerItem` pour vérifier directement le tag `HammerData.REPAIRABLE`
-(plutôt que d'aller chercher l'accesseur exact du tag de réparation sur le record `ToolMaterial`, dont
-le nom précis en 26.2 n'est pas vérifié - contourné entièrement en réutilisant notre propre constante
-déjà connue et fiable).
+ne les reliait jamais à un comportement réel en jeu.
+
+**Première tentative (erreur de compilation, corrigée au retour suivant)** : j'ai d'abord supposé que
+la réparation à l'enclume venait de `TieredItem.isValidRepairItem()`, hérité par tous les vrais outils
+vanilla mais pas par `HammerItem` (qui étend `Item` directement, pas `TieredItem`, à cause de la
+logique de minage custom) - et j'ai ajouté une surcharge manuelle de cette méthode. Erreur de
+compilation réelle : `isValidRepairItem(ItemStack,ItemStack)` n'existe plus du tout sur `Item` en 26.2.
+Cette méthode a été retirée quand la réparation est devenue un **composant de données** plutôt qu'un
+comportement Java (introduit dès les snapshots 1.21, donc bien présent en 26.2) - confirmé par
+recherche externe (le composant `minecraft:repairable`, exposé côté Fabric/vanilla via
+`Item.Properties#repairable(...)`, exactement le même genre de builder que `.enchantable(...)` et
+`.durability(...)` déjà utilisés dans ce fichier).
+
+**Correction réelle** : suppression de la surcharge dans `HammerItem`, remplacée par
+`.repairable(REPAIRABLE)` directement dans la chaîne `Item.Properties` de `HammerData.register()`
+(même tag `HammerData.REPAIRABLE` qu'avant, juste posé au bon endroit). Beaucoup plus simple que la
+première tentative, et cohérent avec le reste du fichier.
 
 ## Versions retenues
 

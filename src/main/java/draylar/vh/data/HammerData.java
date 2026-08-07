@@ -133,6 +133,7 @@ public final class HammerData {
                 .stacksTo(1)
                 .durability(durability * VanillaHammers.CONFIG.durabilityModifier)
                 .enchantable(enchantability)
+                .repairable(REPAIRABLE)
                 .attributes(ItemAttributeModifiers.builder()
                         .add(Attributes.ATTACK_DAMAGE,
                                 new AttributeModifier(VanillaHammers.id("hammer_attack_damage_" + id), attackDamage, AttributeModifier.Operation.ADD_VALUE),
