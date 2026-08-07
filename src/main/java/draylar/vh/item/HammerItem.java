@@ -45,6 +45,19 @@ public class HammerItem extends Item {
         return data;
     }
 
+    /**
+     * HammerItem extends {@code Item} directly rather than {@code TieredItem} (needed for the
+     * custom multi-block mining logic above), so unlike vanilla tools it does NOT automatically
+     * inherit anvil-repair behavior from its {@code ToolMaterial} - {@code Item}'s own default
+     * always returns {@code false}. Wired manually here against the shared repair tag instead of
+     * introspecting {@code ToolMaterial} directly, to sidestep any uncertainty about that record's
+     * exact accessor name in 26.2.
+     */
+    @Override
+    public boolean isValidRepairItem(ItemStack toRepair, ItemStack repair) {
+        return repair.is(HammerData.REPAIRABLE) || super.isValidRepairItem(toRepair, repair);
+    }
+
     @Override
     public float getDestroySpeed(ItemStack stack, BlockState state) {
         return material.speed();

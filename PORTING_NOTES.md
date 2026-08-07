@@ -222,6 +222,18 @@ Ce dossier existait aussi en double dans le dépôt Adabranium (`data/vanilla-ha
 les 3 recettes vibranium/adamantium/nether contribuées à Vanilla Hammers) avec exactement le même bug -
 également corrigé là-bas dans le même mouvement.
 
+## Réparation à l'enclume impossible (confirmé par un test réel) et corrigée
+
+Le tag `vanilla-hammers:repairable` et le `ToolMaterial` de chaque marteau étaient corrects, mais rien
+ne les reliait jamais à un comportement réel en jeu. En vanilla, la réparation à l'enclume à partir du
+tag de réparation d'un `ToolMaterial` est fournie par `TieredItem.isValidRepairItem()` - or
+`HammerItem` étend `Item` directement (pas `TieredItem`), à cause de la logique de minage custom, donc
+il hérite du défaut de `Item.isValidRepairItem()` qui renvoie toujours `false`. Corrigé en surchargeant
+`isValidRepairItem()` sur `HammerItem` pour vérifier directement le tag `HammerData.REPAIRABLE`
+(plutôt que d'aller chercher l'accesseur exact du tag de réparation sur le record `ToolMaterial`, dont
+le nom précis en 26.2 n'est pas vérifié - contourné entièrement en réutilisant notre propre constante
+déjà connue et fiable).
+
 ## Versions retenues
 
 Mêmes versions que le portage Adabranium (déjà confirmées par une compilation + un lancement
