@@ -181,6 +181,29 @@ d'une constante dont le nom exact en 26.2 n'est pas vérifié) ; `EquipmentSlotG
 confirmé exister (utilisé dans le code vanilla historique pour ce même usage) mais pas testé en
 conditions réelles sur cette version précise.
 
+**Piste la plus sérieuse pour le craft impossible, après une très longue session de diagnostic en
+conditions réelles** (JSON revérifié plusieurs fois, item confirmé enregistré, jar confirmé à jour,
+test en isolation sans les 20 autres mods du pack de l'utilisateur, craft vanilla confirmé fonctionnel
+dans le même monde) : les 13 recettes `crafting_shaped` n'avaient **pas** de champ `count` explicite
+dans leur `result` (juste `"id"`, sans `"count"`). Toutes les vraies recettes vanilla générées par le
+jeu lui-même incluent systématiquement `"count": 1` explicitement, tout comme la recette générée par
+Adabranium utilisée comme référence plus haut dans ce document - aucune n'omet ce champ. Hypothèse :
+`count` manquant est peut-être interprété comme `0` plutôt que `1` par le codec de résultat, ce qui
+ferait "matcher" la recette en interne (aucune erreur, aucun avertissement dans les logs - cohérent
+avec ce qu'on observe) mais produirait un résultat de compte nul, donc une pile vide, donc une case de
+résultat visuellement vide dans l'interface - exactement le symptôme. Corrigé en ajoutant `"count": 1`
+explicitement aux 13 recettes `crafting_shaped`. **Pas touché sur `netherite_hammer.json`**
+(`smithing_transform`) : la vraie recette vanilla équivalente (`netherite_pickaxe_smithing.json`)
+n'a elle-même pas de `count` non plus, donc ce type de recette semble avoir un comportement différent
+(ou un défaut à 1 assumé correct pour ce type précis) - pas de raison d'y toucher.
+
+Si cette hypothèse est confirmée par le prochain test réel, ce sera la conclusion d'un chaînage
+d'investigation particulièrement long : `/datapack list` (pack bien actif) → contenu du jar vérifié
+octet pour octet (recette bien à jour) → aucune erreur dans les logs → test en isolation sans les
+20 autres mods (reproductible, donc pas une interférence externe) → craft vanilla confirmé
+fonctionnel dans le même monde (donc pas un bug d'installation/launcher) → comparaison ligne à ligne
+avec une vraie recette vanilla, seule différence trouvée : le champ `count` absent.
+
 ## Versions retenues
 
 Mêmes versions que le portage Adabranium (déjà confirmées par une compilation + un lancement
