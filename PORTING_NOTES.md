@@ -204,6 +204,24 @@ octet pour octet (recette bien à jour) → aucune erreur dans les logs → test
 fonctionnel dans le même monde (donc pas un bug d'installation/launcher) → comparaison ligne à ligne
 avec une vraie recette vanilla, seule différence trouvée : le champ `count` absent.
 
+## LA vraie cause du craft impossible, enfin trouvée
+
+Toutes les hypothèses précédentes (categorie invalide, count manquant...) étaient de vrais bugs annexes
+mais aucune n'était LA cause. La vraie cause, trouvée grâce à `/recipe give @s vanilla-hammers:iron_hammer`
+qui a répondu **"Recette inconnue"** (donc le jeu ne connaissait même pas l'existence de la recette,
+peu importe son contenu) : le dossier de données pour les recettes s'appelle **`recipe` (singulier)**
+depuis un moment déjà côté vanilla, pas `recipes` (pluriel) comme on l'a utilisé partout dans ce
+portage. Confirmé directement dans une vraie arborescence de données vanilla (`data/minecraft/recipe/`
+existe, `data/minecraft/recipes/` n'existe pas - même chose pour `advancement` et `loot_table`,
+également au singulier ; seul `tags` reste au pluriel). Comme Minecraft scanne un dossier au nom
+exact, un dossier `recipes/` n'est simplement jamais visité - aucune erreur, aucun avertissement, les
+14 fichiers étaient juste invisibles pour le jeu depuis le début. Corrigé en renommant
+`data/vanilla-hammers/recipes/` en `data/vanilla-hammers/recipe/` (`git mv`, historique préservé).
+
+Ce dossier existait aussi en double dans le dépôt Adabranium (`data/vanilla-hammers/recipes/`,
+les 3 recettes vibranium/adamantium/nether contribuées à Vanilla Hammers) avec exactement le même bug -
+également corrigé là-bas dans le même mouvement.
+
 ## Versions retenues
 
 Mêmes versions que le portage Adabranium (déjà confirmées par une compilation + un lancement
