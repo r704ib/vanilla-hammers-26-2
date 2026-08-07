@@ -15,8 +15,17 @@
     "vanilla-hammers:ender_hammer",
     "vanilla-hammers:slime_hammer",
     "vanilla-hammers:fiery_hammer",
-    "vanilla-hammers:vibranium_hammer",
-    "vanilla-hammers:nether_hammer",
-    "vanilla-hammers:adamantium_hammer"
+    {
+      "id": "vanilla-hammers:vibranium_hammer",
+      "required": false
+    },
+    {
+      "id": "vanilla-hammers:nether_hammer",
+      "required": false
+    },
+    {
+      "id": "vanilla-hammers:adamantium_hammer",
+      "required": false
+    }
   ]
 }

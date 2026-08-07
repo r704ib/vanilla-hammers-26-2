@@ -150,6 +150,19 @@ Attention : cette liste doit être tenue à jour à la main si un futur mod tier
 marteaux via `static_data/vanilla-hammers/hammers/*.json` sans être ajouté ici - il resterait craftable
 et fonctionnel, juste pas enchantable, sans planter.
 
+**Crash découvert par un test réel (isolation sans Adabranium) et corrigé** : contrairement à ce que
+je pensais, une entrée de tag pointant vers un objet non enregistré n'est **pas** silencieusement
+ignorée en 26.2 - elle fait planter tout le chargement du tag (`IllegalStateException: Missing tag`),
+qui plante en cascade les tags `enchantable/*` qui en dépendent, qui empêchent même les enchantements
+**vanilla** (Efficacité, Solidité, Mending...) de se lier, qui fait planter toute création de monde.
+`pickaxes.json` listait en dur les 3 marteaux fournis par Adabranium (vibranium, nether, adamantium) -
+sans Adabranium installé, ces objets n'existent pas et faisaient planter le jeu à la création de
+n'importe quel monde. Corrigé en marquant ces 3 entrées `"required": false` (format objet
+`{"id": "...", "required": false}` plutôt qu'une simple chaîne) - le tag se construit maintenant
+correctement qu'Adabranium soit présent ou non. **Cette leçon s'applique à toute future entrée
+cross-mod ajoutée à un tag partagé : toujours `required: false` sauf si l'objet est garanti d'exister
+dans ce mod lui-même.**
+
 **Confirmé par un test réel (pas de dégâts d'attaque affichés) et corrigé** : `attackDamage` et
 `attackSpeed` lus depuis le JSON n'étaient jamais appliqués à l'item — il leur manquait le composant
 `minecraft:attribute_modifiers` (`Item.Properties#attributes(ItemAttributeModifiers)`) que les
