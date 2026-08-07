@@ -14,8 +14,12 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.Identifier;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.TagKey;
+import net.minecraft.world.entity.EquipmentSlotGroup;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ToolMaterial;
+import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.level.block.Block;
 
 import java.io.IOException;
@@ -128,7 +132,15 @@ public final class HammerData {
                 .setId(key)
                 .stacksTo(1)
                 .durability(durability * VanillaHammers.CONFIG.durabilityModifier)
-                .enchantable(enchantability);
+                .enchantable(enchantability)
+                .attributes(ItemAttributeModifiers.builder()
+                        .add(Attributes.ATTACK_DAMAGE,
+                                new AttributeModifier(VanillaHammers.id("hammer_attack_damage_" + id), attackDamage, AttributeModifier.Operation.ADD_VALUE),
+                                EquipmentSlotGroup.MAINHAND)
+                        .add(Attributes.ATTACK_SPEED,
+                                new AttributeModifier(VanillaHammers.id("hammer_attack_speed_" + id), attackSpeed, AttributeModifier.Operation.ADD_VALUE),
+                                EquipmentSlotGroup.MAINHAND)
+                        .build());
         if (isFireImmune) {
             settings = settings.fireResistant();
         }

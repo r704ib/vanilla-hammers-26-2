@@ -150,16 +150,23 @@ Attention : cette liste doit être tenue à jour à la main si un futur mod tier
 marteaux via `static_data/vanilla-hammers/hammers/*.json` sans être ajouté ici - il resterait craftable
 et fonctionnel, juste pas enchantable, sans planter.
 
-**Connu et non corrigé pour l'instant (pas encore signalé par un test réel)** : les dégâts d'attaque
-(`attackDamage`) et la vitesse d'attaque (`attackSpeed`) lus depuis le JSON ne sont, eux non plus,
-jamais appliqués à l'item — il leur manque le composant `minecraft:attribute_modifiers`
-(`Item.Properties#attributes(ItemAttributeModifiers)`) que les classes vanilla comme `DiggerItem`
-posent automatiquement dans leur constructeur, mais que `HammerItem` (qui étend `Item` directement,
-pas `DiggerItem`/`PickaxeItem`, à cause de la logique de minage custom) ne pose jamais. En pratique
-ça veut dire qu'un marteau tape actuellement avec les dégâts/vitesse à mains nues (1 dégât), pas avec
-les valeurs configurées par matériau. Pas touché dans cette passe pour rester sur un correctif ciblé
-et à faible risque (l'API exacte d'`AttributeModifier`/`Item.BASE_ATTACK_DAMAGE_ID` en 26.2 n'est pas
-confirmée) — à corriger dans un prochain retour si les dégâts au combat sont signalés comme faux.
+**Confirmé par un test réel (pas de dégâts d'attaque affichés) et corrigé** : `attackDamage` et
+`attackSpeed` lus depuis le JSON n'étaient jamais appliqués à l'item — il leur manquait le composant
+`minecraft:attribute_modifiers` (`Item.Properties#attributes(ItemAttributeModifiers)`) que les
+classes vanilla comme `DiggerItem` posent automatiquement dans leur constructeur, mais que
+`HammerItem` (qui étend `Item` directement, pas `DiggerItem`/`PickaxeItem`, à cause de la logique de
+minage custom) ne posait jamais. Corrigé dans `HammerData.register()` avec
+`ItemAttributeModifiers.builder().add(Attributes.ATTACK_DAMAGE, ..., EquipmentSlotGroup.MAINHAND)` +
+pareil pour `ATTACK_SPEED`. Les valeurs JSON sont déjà pensées comme des *bonus* additifs par rapport
+à la valeur à mains nues (c'est littéralement le nom du paramètre correspondant dans le constructeur
+`ToolMaterial` : `attackDamageBonus`, et les `attackSpeed` du JSON sont négatifs comme toutes les
+valeurs vanilla, ex. `-2.4` pour l'épée en diamant) donc utilisées telles quelles avec
+`AttributeModifier.Operation.ADD_VALUE`, sans transformation. **Best-effort / pas confirmé** : l'ID
+de chaque `AttributeModifier` est un `Identifier` custom (`vanilla-hammers:hammer_attack_damage_<id>`)
+plutôt que la constante vanilla `Item.BASE_ATTACK_DAMAGE_ID` (choix délibéré pour ne pas dépendre
+d'une constante dont le nom exact en 26.2 n'est pas vérifié) ; `EquipmentSlotGroup.MAINHAND` est
+confirmé exister (utilisé dans le code vanilla historique pour ce même usage) mais pas testé en
+conditions réelles sur cette version précise.
 
 ## Versions retenues
 
