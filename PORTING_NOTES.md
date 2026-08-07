@@ -109,6 +109,36 @@ la liste des points "best-effort" ci-dessus, aucun ne casse la compilation mais 
 avoir un comportement différent de ce qui est documenté (mapping des niveaux de minage, Silk Touch non
 filtré, knockback simplifié...).
 
+## Bugs trouvés après le "BUILD SUCCESSFUL" (retours de test en jeu)
+
+**Craft impossible sur les 13 marteaux natifs en crafting_shaped** (le netherite, en
+`smithing_transform`, n'était pas touché) : chaque recette utilisait `"category": "tools"`, une
+valeur qui n'existe pas dans l'énumération `CraftingBookCategory` de Minecraft (valeurs valides :
+`building`, `redstone`, `equipment`, `misc`). Une catégorie invalide fait échouer le parsing JSON de
+toute la recette au chargement du datapack — Minecraft l'ignore silencieusement, sans crash, donc le
+bug ne se voyait qu'en essayant de crafter. Corrigé en `"equipment"` dans les 13 fichiers.
+
+**Enchantement impossible sur tous les marteaux** : `HammerData.register()` construisait
+`Item.Properties` avec seulement `.setId(key).stacksTo(1)` (+ `.fireResistant()` si applicable). Le
+champ `enchantability` était bien lu depuis le JSON et stocké dans `ToolMaterial`, mais jamais
+appliqué à l'item lui-même via `.enchantable(...)` — sans ce composant, un item n'est tout simplement
+pas éligible à l'enchantement en table, quelle que soit sa valeur d'enchantabilité déclarée. Même
+chose pour `.durability(...)` : jamais appelé, donc l'item n'était pas endommageable du tout
+(`ItemStack.hurtAndBreak()` ne fait rien sur un item sans composant de durabilité — pas de crash, mais
+durabilité infinie en pratique, invisible sans vérifier explicitement). Les deux sont maintenant
+posés explicitement sur `Item.Properties` dans `HammerData.register()`.
+
+**Connu et non corrigé pour l'instant (pas encore signalé par un test réel)** : les dégâts d'attaque
+(`attackDamage`) et la vitesse d'attaque (`attackSpeed`) lus depuis le JSON ne sont, eux non plus,
+jamais appliqués à l'item — il leur manque le composant `minecraft:attribute_modifiers`
+(`Item.Properties#attributes(ItemAttributeModifiers)`) que les classes vanilla comme `DiggerItem`
+posent automatiquement dans leur constructeur, mais que `HammerItem` (qui étend `Item` directement,
+pas `DiggerItem`/`PickaxeItem`, à cause de la logique de minage custom) ne pose jamais. En pratique
+ça veut dire qu'un marteau tape actuellement avec les dégâts/vitesse à mains nues (1 dégât), pas avec
+les valeurs configurées par matériau. Pas touché dans cette passe pour rester sur un correctif ciblé
+et à faible risque (l'API exacte d'`AttributeModifier`/`Item.BASE_ATTACK_DAMAGE_ID` en 26.2 n'est pas
+confirmée) — à corriger dans un prochain retour si les dégâts au combat sont signalés comme faux.
+
 ## Versions retenues
 
 Mêmes versions que le portage Adabranium (déjà confirmées par une compilation + un lancement

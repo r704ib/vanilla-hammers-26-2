@@ -124,7 +124,11 @@ public final class HammerData {
                 REPAIRABLE
         );
 
-        Item.Properties settings = new Item.Properties().setId(key).stacksTo(1);
+        Item.Properties settings = new Item.Properties()
+                .setId(key)
+                .stacksTo(1)
+                .durability(durability * VanillaHammers.CONFIG.durabilityModifier)
+                .enchantable(enchantability);
         if (isFireImmune) {
             settings = settings.fireResistant();
         }
