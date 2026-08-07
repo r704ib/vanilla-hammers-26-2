@@ -128,6 +128,28 @@ chose pour `.durability(...)` : jamais appelé, donc l'item n'était pas endomma
 durabilité infinie en pratique, invisible sans vérifier explicitement). Les deux sont maintenant
 posés explicitement sur `Item.Properties` dans `HammerData.register()`.
 
+**Enchantements visibles dans la table mais impossibles à valider** : poser `.enchantable(...)` sur
+l'item (voir plus haut) ne suffit pas à lui-même. Depuis la refonte des enchantements en 1.21, chaque
+enchantement (Efficacité, Fortune, Solidité...) déclare un tag `supported_items` qui liste les objets
+éligibles - et ce tag est indépendant du composant `enchantable`. Vérifié directement dans les données
+vanilla (`data/minecraft/tags/item/enchantable/mining.json`, `mining_loot.json`, `durability.json`) :
+ces tags n'énumèrent jamais les objets un par un, ils référencent `#minecraft:pickaxes` (+ axes/pelles/
+houes). Nos marteaux n'étant dans aucun tag vanilla, la table proposait un enchantement (le composant
+`enchantable` suffit pour ça) mais le clic de confirmation échouait silencieusement car l'enchantement
+n'est en réalité pas "supporté" pour cet objet. Corrigé en ajoutant tous les marteaux (les 14 natifs +
+les 3 fournis par Adabranium : vibranium, adamantium, nether) au tag `#minecraft:pickaxes` via un
+fichier `data/minecraft/tags/item/pickaxes.json` dans ce mod (un mod peut étendre un tag vanilla en
+livrant un fichier au même chemin sous le namespace `minecraft` - Minecraft fusionne avec le tag
+d'origine au lieu de le remplacer). Ça couvre transitivement Efficacité/Fortune/Sac de nœuds
+(`enchantable/mining` + `mining_loot`), Solidité (`enchantable/durability`) et Malédiction de
+disparition (`enchantable/vanishing`, qui référence `durability`). Volontairement pas ajouté à
+`#minecraft:axes`/`#minecraft:swords` (Tranchant, Butin...) pour ne pas hériter d'un comportement
+d'outil non désiré (ex. déshabillage des troncs par une hache) - à revoir si demandé.
+
+Attention : cette liste doit être tenue à jour à la main si un futur mod tiers fournit encore d'autres
+marteaux via `static_data/vanilla-hammers/hammers/*.json` sans être ajouté ici - il resterait craftable
+et fonctionnel, juste pas enchantable, sans planter.
+
 **Connu et non corrigé pour l'instant (pas encore signalé par un test réel)** : les dégâts d'attaque
 (`attackDamage`) et la vitesse d'attaque (`attackSpeed`) lus depuis le JSON ne sont, eux non plus,
 jamais appliqués à l'item — il leur manque le composant `minecraft:attribute_modifiers`

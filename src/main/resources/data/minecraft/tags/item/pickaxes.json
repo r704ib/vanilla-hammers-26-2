@@ -1,0 +1,22 @@
+{
+  "replace": false,
+  "values": [
+    "vanilla-hammers:wooden_hammer",
+    "vanilla-hammers:stone_hammer",
+    "vanilla-hammers:iron_hammer",
+    "vanilla-hammers:golden_hammer",
+    "vanilla-hammers:diamond_hammer",
+    "vanilla-hammers:netherite_hammer",
+    "vanilla-hammers:emerald_hammer",
+    "vanilla-hammers:lapis_hammer",
+    "vanilla-hammers:quartz_hammer",
+    "vanilla-hammers:prismarine_hammer",
+    "vanilla-hammers:obsidian_hammer",
+    "vanilla-hammers:ender_hammer",
+    "vanilla-hammers:slime_hammer",
+    "vanilla-hammers:fiery_hammer",
+    "vanilla-hammers:vibranium_hammer",
+    "vanilla-hammers:nether_hammer",
+    "vanilla-hammers:adamantium_hammer"
+  ]
+}
