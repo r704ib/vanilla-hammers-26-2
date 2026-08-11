@@ -125,15 +125,19 @@ public final class HammerData {
         );
 
         // durability/enchantable/repairable/attack attributes/minecraft:tool are all set for us by
-        // PickaxeItem's constructor below, from this same `material` - see HammerItem's javadoc for
-        // why letting PickaxeItem build the tool component itself (rather than doing it by hand
-        // here, which crashed twice in a row on real API guesses) matters.
-        Item.Properties settings = new Item.Properties().setId(key).stacksTo(1);
+        // .pickaxe(...) below, from this same `material` - see HammerItem's javadoc for why letting
+        // it build the tool component itself (rather than doing it by hand, which crashed twice in a
+        // row on real API guesses, or extending a PickaxeItem class that doesn't exist in 26.2)
+        // matters.
+        Item.Properties settings = new Item.Properties()
+                .setId(key)
+                .stacksTo(1)
+                .pickaxe(material, attackDamage, attackSpeed);
         if (isFireImmune) {
             settings = settings.fireResistant();
         }
 
-        HammerItem hammer = new HammerItem(material, attackDamage, attackSpeed, settings, breakRadius == 0 ? 1 : breakRadius, this);
+        HammerItem hammer = new HammerItem(material, settings, breakRadius == 0 ? 1 : breakRadius, this);
         Registry.register(BuiltInRegistries.ITEM, key, hammer);
         ALL.add(hammer);
 

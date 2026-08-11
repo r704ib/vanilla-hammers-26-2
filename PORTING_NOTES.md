@@ -336,10 +336,22 @@ mêmes `attackDamage`/`attackSpeed` qu'on leur passe déjà - donc tous nos appe
 (propriétés propres au marteau, pas dérivées du matériau). Simplifie le code en plus de corriger le
 bug - moins de surface pour deviner une API incertaine.
 
-**Reste best-effort / pas confirmé** : la signature exacte du constructeur `PickaxeItem` elle-même
-(`ToolMaterial, float, float, Item.Properties`) est déduite par analogie avec `AxeItem` (confirmé) et
-la hiérarchie `DiggerItem` commune, pas vue directement dans une source `PickaxeItem` - à confirmer par
-le prochain retour de compilation.
+**4e tentative - `PickaxeItem` n'existe pas du tout en 26.2, corrigée au retour suivant** : la
+supposition de la 3e tentative (signature déduite par analogie avec `AxeItem`) était en fait basée sur
+une prémisse fausse - `import net.minecraft.world.item.PickaxeItem` a échoué avec `cannot find symbol:
+class PickaxeItem`. Cette classe n'existe simplement plus en 26.2. Trouvé la vraie explication et le
+vrai remplacement en cherchant un autre usage réel et compilable dans les tests `fabric-item-api-v1` :
+`CustomDamageTest.WeirdPick`, qui étend `Item` **directement** (pas de classe dédiée) et pose tout via
+`new Item.Properties().pickaxe(ToolMaterial.GOLD, 3f, 5f)`. Les pioches, comme les épées avant elles,
+n'ont apparemment plus besoin d'une classe dédiée puisqu'elles n'ont pas de comportement de clic-droit
+spécial (contrairement aux haches/houes/pelles, qui elles ont probablement encore des classes dédiées,
+vu `AxeItem` confirmé plus haut) - tout passe par un raccourci sur `Item.Properties`.
+
+Corrigé en repassant `HammerItem` à `extends Item` (comme dans les toutes premières versions de ce
+fichier) et en ajoutant `.pickaxe(material, attackDamage, attackSpeed)` à la chaîne `Item.Properties`
+dans `HammerData.register()` à la place de l'héritage `PickaxeItem`. Le constructeur `HammerItem`
+redevient aussi plus simple (`material, settings, breakRadius, data)`, sans avoir besoin de
+`attackDamage`/`attackSpeed` en paramètres séparés puisque `.pickaxe(...)` s'en charge en amont.
 
 ## Versions retenues
 

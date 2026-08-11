@@ -9,7 +9,6 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.PickaxeItem;
 import net.minecraft.world.item.ToolMaterial;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.item.crafting.SingleRecipeInput;
@@ -29,23 +28,23 @@ import java.util.List;
  * library, which provided the same mechanic - see PORTING_NOTES.md for details on what's
  * simplified compared to the original implementation.
  * <p>
- * Extends {@code PickaxeItem} (rather than {@code Item} directly, as earlier versions of this
- * class did) specifically so its constructor builds the {@code minecraft:tool} data component for
- * us, referencing {@code BlockTags.MINEABLE_WITH_PICKAXE} - the same code path every vanilla
- * pickaxe uses, safe at this exact point in mod loading (block tags aren't bound yet - confirmed by
- * a real crash when this was attempted by hand instead, see PORTING_NOTES.md). Without a correct
- * {@code minecraft:tool} component, {@code Block.getDrops()} silently treats the hammer as the
- * wrong tool for every block: enchantments (Fortune...) get ignored and tier-gated blocks (e.g.
- * diamond ore) drop nothing at all - confirmed by a real report before this fix.
+ * There is no {@code PickaxeItem} class in 26.2 to extend for the {@code minecraft:tool} data
+ * component that governs whether enchantments (Fortune...) apply and whether tier-gated blocks
+ * (e.g. diamond ore) drop anything at all when broken - confirmed by a real report before this was
+ * wired up, then by a real "cannot find symbol: class PickaxeItem" compile error when that was tried.
+ * Pickaxe-like tools are built entirely through {@code Item.Properties#pickaxe(ToolMaterial, float,
+ * float)} instead (confirmed via real, compiling Fabric API test source -
+ * {@code CustomDamageTest.WeirdPick}, a plain {@code Item} subclass using exactly this), called on
+ * the {@code settings} passed in here - see {@code HammerData.register()}.
  */
-public class HammerItem extends PickaxeItem {
+public class HammerItem extends Item {
 
     private final ToolMaterial material;
     private final int breakRadius;
     private final HammerData data;
 
-    public HammerItem(ToolMaterial material, float attackDamage, float attackSpeed, Item.Properties settings, int breakRadius, HammerData data) {
-        super(material, attackDamage, attackSpeed, settings);
+    public HammerItem(ToolMaterial material, Item.Properties settings, int breakRadius, HammerData data) {
+        super(settings);
         this.material = material;
         this.breakRadius = breakRadius;
         this.data = data;
