@@ -7,22 +7,15 @@ import draylar.vh.VanillaHammers;
 import draylar.vh.item.HammerItem;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.ModContainer;
-import net.minecraft.core.HolderSet;
 import net.minecraft.core.Registry;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.Identifier;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.TagKey;
-import net.minecraft.world.entity.EquipmentSlotGroup;
-import net.minecraft.world.entity.ai.attributes.AttributeModifier;
-import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ToolMaterial;
-import net.minecraft.world.item.component.ItemAttributeModifiers;
-import net.minecraft.world.item.component.Tool;
 import net.minecraft.world.level.block.Block;
 
 import java.io.IOException;
@@ -32,7 +25,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Stream;
 
 /**
@@ -132,69 +124,22 @@ public final class HammerData {
                 REPAIRABLE
         );
 
-        Item.Properties settings = new Item.Properties()
-                .setId(key)
-                .stacksTo(1)
-                .durability(durability * VanillaHammers.CONFIG.durabilityModifier)
-                .enchantable(enchantability)
-                .repairable(REPAIRABLE)
-                .component(DataComponents.TOOL, buildToolComponent(blockBreakSpeed * (float) VanillaHammers.CONFIG.breakSpeedMultiplier))
-                .attributes(ItemAttributeModifiers.builder()
-                        .add(Attributes.ATTACK_DAMAGE,
-                                new AttributeModifier(VanillaHammers.id("hammer_attack_damage_" + id), attackDamage, AttributeModifier.Operation.ADD_VALUE),
-                                EquipmentSlotGroup.MAINHAND)
-                        .add(Attributes.ATTACK_SPEED,
-                                new AttributeModifier(VanillaHammers.id("hammer_attack_speed_" + id), attackSpeed, AttributeModifier.Operation.ADD_VALUE),
-                                EquipmentSlotGroup.MAINHAND)
-                        .build());
+        // durability/enchantable/repairable/attack attributes/minecraft:tool are all set for us by
+        // PickaxeItem's constructor below, from this same `material` - see HammerItem's javadoc for
+        // why letting PickaxeItem build the tool component itself (rather than doing it by hand
+        // here, which crashed twice in a row on real API guesses) matters.
+        Item.Properties settings = new Item.Properties().setId(key).stacksTo(1);
         if (isFireImmune) {
             settings = settings.fireResistant();
         }
 
-        HammerItem hammer = new HammerItem(material, settings, breakRadius == 0 ? 1 : breakRadius, this);
+        HammerItem hammer = new HammerItem(material, attackDamage, attackSpeed, settings, breakRadius == 0 ? 1 : breakRadius, this);
         Registry.register(BuiltInRegistries.ITEM, key, hammer);
         ALL.add(hammer);
 
         if (burnTime > 0) {
             FUEL_ENTRIES.add(new FuelEntry(hammer, burnTime));
         }
-    }
-
-    /**
-     * Builds the {@code minecraft:tool} data component by hand, since {@code HammerItem} extends
-     * {@code Item} directly rather than {@code PickaxeItem}/{@code DiggerItem} (which would build
-     * this automatically). Without it, {@code Tool.isCorrectForDrops()} - consulted internally by
-     * {@code Block.getDrops()} - defaults to "not correct for drops" for every block, which is
-     * silent (no exception, no log warning) and was the real cause of a real bug: enchantments
-     * (Fortune...) being ignored and tier-gated blocks (e.g. diamond ore) dropping nothing at all
-     * when broken by the hammer's area-of-effect. Covers the same 4 tags vanilla's own tools use
-     * (pickaxe/shovel/axe/hoe) so drops behave correctly regardless of which kind of block the
-     * hammer happens to hit. {@code Registry#getTagOrEmpty} is used specifically because this runs
-     * at mod-init time, before tags are loaded - it returns a live reference that gets filled in
-     * once tags are ready, rather than requiring them to already exist (see the class javadoc on
-     * why this whole scan-and-register step already has to run this early).
-     */
-    private static Tool buildToolComponent(float speed) {
-        List<Tool.Rule> rules = List.of(
-                new Tool.Rule(mineableTag(BlockTags.MINEABLE_WITH_PICKAXE), Optional.of(speed), Optional.of(true)),
-                new Tool.Rule(mineableTag(BlockTags.MINEABLE_WITH_SHOVEL), Optional.of(speed), Optional.of(true)),
-                new Tool.Rule(mineableTag(BlockTags.MINEABLE_WITH_AXE), Optional.of(speed), Optional.of(true)),
-                new Tool.Rule(mineableTag(BlockTags.MINEABLE_WITH_HOE), Optional.of(speed), Optional.of(true))
-        );
-        return new Tool(rules, 1.0f, 1, false);
-    }
-
-    /**
-     * {@code Registry#getTagOrEmpty} is declared to return the weaker {@code Iterable<Holder<T>>}
-     * (not {@code HolderSet<T>}, which is what {@code Tool.Rule} actually needs), even though the
-     * object it hands back at runtime genuinely is a {@code HolderSet.Named<T>} - confirmed by
-     * reading the registry's own tag-storage internals (Fabric API's {@code MappedRegistryMixin}
-     * shadows a {@code createTag(TagKey<T>)} returning exactly that type). The cast just recovers
-     * the precise type the interface throws away; it doesn't change what object is returned.
-     */
-    @SuppressWarnings("unchecked")
-    private static HolderSet<Block> mineableTag(TagKey<Block> tag) {
-        return (HolderSet<Block>) BuiltInRegistries.BLOCK.getTagOrEmpty(tag);
     }
 
     public boolean canSmelt() {

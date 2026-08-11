@@ -307,6 +307,40 @@ l'exécution est bien un `HolderSet`, juste déclaré plus largement par l'inter
 explicite (`mineableTag()`), qui ne change rien à ce qui est renvoyé, juste au type vu par le
 compilateur.
 
+**3e tentative - plantage réel au chargement du monde cette fois (compilait, mais crash confirmé par
+un vrai test), corrigée en changeant complètement d'approche** : le cast compilait, mais à l'exécution,
+`getTagOrEmpty(BlockTags.MINEABLE_WITH_PICKAXE)` lançait
+`IllegalStateException: Tags not bound, trying to access TagKey[minecraft:block / minecraft:mineable/pickaxe]`.
+Confirmé noir sur blanc dans le log (`Failed to load hammer data from ...` pour les 17 marteaux, capturé
+grâce à un test réel) : les tags de blocs ne sont **vraiment** pas liés à ce stade du chargement du mod,
+comme le disait déjà la javadoc de cette classe depuis le début - mon hypothèse selon laquelle
+`getTagOrEmpty` renverrait une référence "vide puis remplie plus tard" était fausse, elle exige que le
+tag soit déjà résolu.
+
+Plutôt que de continuer à deviner la bonne méthode d'accès bas niveau (déjà deux échecs sur ce point
+précis), changement d'approche complet : **`HammerItem` étend maintenant `PickaxeItem` au lieu
+d'`Item` directement**. `PickaxeItem`/`DiggerItem` construisent déjà correctement ce même composant
+`minecraft:tool` (avec `BlockTags.MINEABLE_WITH_PICKAXE`) dans leur propre constructeur, exactement au
+même moment du chargement du mod que nous - c'est le mécanisme que **toutes** les pioches vanilla
+utilisent avec succès, donc garanti fonctionner à ce stade précis, sans qu'on ait besoin de deviner
+quoi que ce soit. Confirmé via `AxeItem` dans le code source réel des exemples de `fabric-docs`
+(`new AxeItem(material, attackDamage, attackSpeed, settings)`), `PickaxeItem` partageant la même
+hiérarchie `DiggerItem` et donc très probablement le même patron de constructeur.
+
+Bénéfice supplémentaire : `PickaxeItem`/`TieredItem` posent aussi automatiquement `durability`,
+`enchantable`, `repairable` et les attributs d'attaque/vitesse à partir du même `ToolMaterial` et des
+mêmes `attackDamage`/`attackSpeed` qu'on leur passe déjà - donc tous nos appels manuels
+`.durability(...)`, `.enchantable(...)`, `.repairable(...)`, `.attributes(...)` sur `Item.Properties`
+(ajoutés lors de sessions précédentes) sont devenus redondants et ont été retirés de
+`HammerData.register()`, qui ne pose plus que `.setId(...)`, `.stacksTo(1)` et `.fireResistant()`
+(propriétés propres au marteau, pas dérivées du matériau). Simplifie le code en plus de corriger le
+bug - moins de surface pour deviner une API incertaine.
+
+**Reste best-effort / pas confirmé** : la signature exacte du constructeur `PickaxeItem` elle-même
+(`ToolMaterial, float, float, Item.Properties`) est déduite par analogie avec `AxeItem` (confirmé) et
+la hiérarchie `DiggerItem` commune, pas vue directement dans une source `PickaxeItem` - à confirmer par
+le prochain retour de compilation.
+
 ## Versions retenues
 
 Mêmes versions que le portage Adabranium (déjà confirmées par une compilation + un lancement
