@@ -176,12 +176,25 @@ public final class HammerData {
      */
     private static Tool buildToolComponent(float speed) {
         List<Tool.Rule> rules = List.of(
-                new Tool.Rule(BuiltInRegistries.BLOCK.getTagOrEmpty(BlockTags.MINEABLE_WITH_PICKAXE), Optional.of(speed), Optional.of(true)),
-                new Tool.Rule(BuiltInRegistries.BLOCK.getTagOrEmpty(BlockTags.MINEABLE_WITH_SHOVEL), Optional.of(speed), Optional.of(true)),
-                new Tool.Rule(BuiltInRegistries.BLOCK.getTagOrEmpty(BlockTags.MINEABLE_WITH_AXE), Optional.of(speed), Optional.of(true)),
-                new Tool.Rule(BuiltInRegistries.BLOCK.getTagOrEmpty(BlockTags.MINEABLE_WITH_HOE), Optional.of(speed), Optional.of(true))
+                new Tool.Rule(mineableTag(BlockTags.MINEABLE_WITH_PICKAXE), Optional.of(speed), Optional.of(true)),
+                new Tool.Rule(mineableTag(BlockTags.MINEABLE_WITH_SHOVEL), Optional.of(speed), Optional.of(true)),
+                new Tool.Rule(mineableTag(BlockTags.MINEABLE_WITH_AXE), Optional.of(speed), Optional.of(true)),
+                new Tool.Rule(mineableTag(BlockTags.MINEABLE_WITH_HOE), Optional.of(speed), Optional.of(true))
         );
         return new Tool(rules, 1.0f, 1, false);
+    }
+
+    /**
+     * {@code Registry#getTagOrEmpty} is declared to return the weaker {@code Iterable<Holder<T>>}
+     * (not {@code HolderSet<T>}, which is what {@code Tool.Rule} actually needs), even though the
+     * object it hands back at runtime genuinely is a {@code HolderSet.Named<T>} - confirmed by
+     * reading the registry's own tag-storage internals (Fabric API's {@code MappedRegistryMixin}
+     * shadows a {@code createTag(TagKey<T>)} returning exactly that type). The cast just recovers
+     * the precise type the interface throws away; it doesn't change what object is returned.
+     */
+    @SuppressWarnings("unchecked")
+    private static HolderSet<Block> mineableTag(TagKey<Block> tag) {
+        return (HolderSet<Block>) BuiltInRegistries.BLOCK.getTagOrEmpty(tag);
     }
 
     public boolean canSmelt() {

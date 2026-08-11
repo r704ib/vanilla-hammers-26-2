@@ -298,6 +298,15 @@ dépôt `fabric-content-registries-v0` de Fabric API (`FlammableBlockRegistryImp
 premier essai via une autre source réelle et compilable (`fabric-item-api-v1`,
 `ModifyComponentsInPropertiesTestSetup.java`) et n'ont pas eu besoin d'être changées.
 
+**2e tentative (erreur de compilation, corrigée au retour suivant)** : `getTagOrEmpty` compile bien
+mais renvoie un simple `Iterable<Holder<Block>>` côté interface, pas le `HolderSet<Block>` qu'exige
+`Tool.Rule` - erreur de type à la compilation. Confirmé en lisant les internes de stockage des tags du
+registre (le mixin `MappedRegistryMixin` de Fabric API "shadow" une méthode interne
+`createTag(TagKey<T>)` qui renvoie bien un `HolderSet.Named<T>`) que l'objet réellement renvoyé à
+l'exécution est bien un `HolderSet`, juste déclaré plus largement par l'interface. Corrigé avec un cast
+explicite (`mineableTag()`), qui ne change rien à ce qui est renvoyé, juste au type vu par le
+compilateur.
+
 ## Versions retenues
 
 Mêmes versions que le portage Adabranium (déjà confirmées par une compilation + un lancement
