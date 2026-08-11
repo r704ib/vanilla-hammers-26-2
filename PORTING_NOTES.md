@@ -243,6 +243,24 @@ recherche externe (le composant `minecraft:repairable`, exposé côté Fabric/va
 (même tag `HammerData.REPAIRABLE` qu'avant, juste posé au bon endroit). Beaucoup plus simple que la
 première tentative, et cohérent avec le reste du fichier.
 
+## Fortune (et tout autre enchantement) ignoré sur les blocs cassés en zone, confirmé par un test réel
+
+Signalé par l'utilisateur : Fortune 3 sur un marteau ne donnait pas plus de butin, et certains blocs
+cassés par l'effet de zone ne donnaient carrément rien. Cause trouvée dans `HammerItem.breakExtra()` :
+pour tous les marteaux sauf celui en fiery (`canSmelt() == true`), les blocs "en plus" (autour du bloc
+visé) étaient cassés via `level.destroyBlock(pos, true, player)` - une méthode qui ne prend **pas**
+l'outil en paramètre. En interne, Minecraft calcule alors le butin comme si le bloc était cassé à
+mains nues : les enchantements du marteau (Fortune, Sac de nœuds...) n'étaient jamais consultés, et les
+blocs qui exigent un palier d'outil minimum pour lâcher leur butin (le diamant par exemple) ne
+donnaient tout simplement rien. Seul le bloc central, cassé via le circuit de minage normal du joueur
+(en dehors de notre code), profitait correctement des enchantements - d'où l'impression très
+spécifique remontée par l'utilisateur.
+
+Corrigé en unifiant les deux branches (fonte ou non) sur le même calcul de butin déjà utilisé pour le
+marteau fiery, `Block.getDrops(state, level, pos, blockEntity, player, tool)` - qui prend bien l'outil
+réel en compte pour les enchantements et le palier requis - suivi de la fonte optionnelle bloc par bloc
+selon `data.canSmelt()`.
+
 ## Versions retenues
 
 Mêmes versions que le portage Adabranium (déjà confirmées par une compilation + un lancement

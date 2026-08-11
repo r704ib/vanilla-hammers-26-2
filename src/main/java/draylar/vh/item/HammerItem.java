@@ -104,16 +104,17 @@ public class HammerItem extends Item {
             return;
         }
 
-        if (data.canSmelt()) {
-            List<ItemStack> drops = Block.getDrops(state, level, pos, level.getBlockEntity(pos), player, tool);
-            level.removeBlock(pos, false);
-            level.levelEvent(2001, pos, Block.getId(state));
+        // NOTE: always compute drops via Block.getDrops() with the real tool stack, rather than
+        // level.destroyBlock(pos, true, player) - that overload has no tool parameter, so it
+        // computes drops as if broken by an empty hand: enchantments on the hammer (Fortune, Silk
+        // Touch...) were silently ignored, and tool-tier-gated blocks (e.g. diamond ore) dropped
+        // nothing at all. Confirmed by a real in-game report of Fortune not working / missing drops.
+        List<ItemStack> drops = Block.getDrops(state, level, pos, level.getBlockEntity(pos), player, tool);
+        level.removeBlock(pos, false);
+        level.levelEvent(2001, pos, Block.getId(state));
 
-            for (ItemStack drop : drops) {
-                Block.popResource(level, pos, smelt(level, drop));
-            }
-        } else {
-            level.destroyBlock(pos, true, player);
+        for (ItemStack drop : drops) {
+            Block.popResource(level, pos, data.canSmelt() ? smelt(level, drop) : drop);
         }
 
         // NOTE: exact hurtAndBreak() signature in 26.2 unconfirmed - flagged in PORTING_NOTES.md.
