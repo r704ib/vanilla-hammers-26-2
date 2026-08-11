@@ -169,17 +169,17 @@ public final class HammerData {
      * (Fortune...) being ignored and tier-gated blocks (e.g. diamond ore) dropping nothing at all
      * when broken by the hammer's area-of-effect. Covers the same 4 tags vanilla's own tools use
      * (pickaxe/shovel/axe/hoe) so drops behave correctly regardless of which kind of block the
-     * hammer happens to hit. {@code Registry#getOrCreateTag} is used specifically because this runs
+     * hammer happens to hit. {@code Registry#getTagOrEmpty} is used specifically because this runs
      * at mod-init time, before tags are loaded - it returns a live reference that gets filled in
      * once tags are ready, rather than requiring them to already exist (see the class javadoc on
      * why this whole scan-and-register step already has to run this early).
      */
     private static Tool buildToolComponent(float speed) {
         List<Tool.Rule> rules = List.of(
-                new Tool.Rule(BuiltInRegistries.BLOCK.getOrCreateTag(BlockTags.MINEABLE_WITH_PICKAXE), Optional.of(speed), Optional.of(true)),
-                new Tool.Rule(BuiltInRegistries.BLOCK.getOrCreateTag(BlockTags.MINEABLE_WITH_SHOVEL), Optional.of(speed), Optional.of(true)),
-                new Tool.Rule(BuiltInRegistries.BLOCK.getOrCreateTag(BlockTags.MINEABLE_WITH_AXE), Optional.of(speed), Optional.of(true)),
-                new Tool.Rule(BuiltInRegistries.BLOCK.getOrCreateTag(BlockTags.MINEABLE_WITH_HOE), Optional.of(speed), Optional.of(true))
+                new Tool.Rule(BuiltInRegistries.BLOCK.getTagOrEmpty(BlockTags.MINEABLE_WITH_PICKAXE), Optional.of(speed), Optional.of(true)),
+                new Tool.Rule(BuiltInRegistries.BLOCK.getTagOrEmpty(BlockTags.MINEABLE_WITH_SHOVEL), Optional.of(speed), Optional.of(true)),
+                new Tool.Rule(BuiltInRegistries.BLOCK.getTagOrEmpty(BlockTags.MINEABLE_WITH_AXE), Optional.of(speed), Optional.of(true)),
+                new Tool.Rule(BuiltInRegistries.BLOCK.getTagOrEmpty(BlockTags.MINEABLE_WITH_HOE), Optional.of(speed), Optional.of(true))
         );
         return new Tool(rules, 1.0f, 1, false);
     }

@@ -281,7 +281,7 @@ du tout, complètement séparée de cette histoire de composant).
 Corrigé en construisant le composant `minecraft:tool` à la main dans `HammerData.register()`
 (`buildToolComponent()`), avec une règle par tag `MINEABLE_WITH_{PICKAXE,SHOVEL,AXE,HOE}` marquée
 `correctForDrops: true` - couvre tous les blocs que ces 4 outils vanilla peuvent normalement casser,
-peu importe lequel le marteau touche. Construit via `Registry#getOrCreateTag(TagKey)` plutôt que
+peu importe lequel le marteau touche. Construit via `Registry#getTagOrEmpty(TagKey)` plutôt que
 `HolderLookup.Provider#getOrThrow` - le premier renvoie une référence "vide puis remplie plus tard",
 utilisable avant que les tags soient chargés (contrairement au second qui exige que le tag existe déjà
 au moment de l'appel) ; nécessaire ici puisque tout ce fichier tourne au moment de l'initialisation du
@@ -290,10 +290,13 @@ pas d'effet réel sur le jeu telle quelle car `HammerItem.getDestroySpeed()` la 
 une valeur uniforme - seul le `correctForDrops: true` compte vraiment ici, la vitesse est juste posée
 par cohérence.
 
-**Best-effort / pas confirmé sur cette version précise** : signatures de `Tool`/`Tool.Rule` et
-`Registry#getOrCreateTag` basées sur une vraie source Java qui compile dans le dépôt `fabric-item-api-v1`
-de Fabric API (pas une simple supposition), mais pas testées en conditions réelles sur 26.2 avant le
-prochain retour de compilation/jeu.
+**1ère tentative (erreur de compilation, corrigée au retour suivant)** : `Registry#getOrCreateTag` -
+n'existe pas du tout sous ce nom en 26.2 (mauvais souvenir de ma part, pas vérifié contre une vraie
+source au moment de l'écrire). Vraie méthode trouvée en cherchant un usage réel et compilable dans le
+dépôt `fabric-content-registries-v0` de Fabric API (`FlammableBlockRegistryImpl.java`) :
+`Registry#getTagOrEmpty(TagKey)`. Signatures de `Tool`/`Tool.Rule` elles-mêmes confirmées dès le
+premier essai via une autre source réelle et compilable (`fabric-item-api-v1`,
+`ModifyComponentsInPropertiesTestSetup.java`) et n'ont pas eu besoin d'être changées.
 
 ## Versions retenues
 
