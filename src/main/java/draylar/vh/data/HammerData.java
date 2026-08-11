@@ -7,7 +7,9 @@ import draylar.vh.VanillaHammers;
 import draylar.vh.item.HammerItem;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.ModContainer;
+import net.minecraft.core.HolderSet;
 import net.minecraft.core.Registry;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
@@ -20,6 +22,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ToolMaterial;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
+import net.minecraft.world.item.component.Tool;
 import net.minecraft.world.level.block.Block;
 
 import java.io.IOException;
@@ -29,6 +32,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 /**
@@ -134,6 +138,7 @@ public final class HammerData {
                 .durability(durability * VanillaHammers.CONFIG.durabilityModifier)
                 .enchantable(enchantability)
                 .repairable(REPAIRABLE)
+                .component(DataComponents.TOOL, buildToolComponent(blockBreakSpeed * (float) VanillaHammers.CONFIG.breakSpeedMultiplier))
                 .attributes(ItemAttributeModifiers.builder()
                         .add(Attributes.ATTACK_DAMAGE,
                                 new AttributeModifier(VanillaHammers.id("hammer_attack_damage_" + id), attackDamage, AttributeModifier.Operation.ADD_VALUE),
@@ -153,6 +158,30 @@ public final class HammerData {
         if (burnTime > 0) {
             FUEL_ENTRIES.add(new FuelEntry(hammer, burnTime));
         }
+    }
+
+    /**
+     * Builds the {@code minecraft:tool} data component by hand, since {@code HammerItem} extends
+     * {@code Item} directly rather than {@code PickaxeItem}/{@code DiggerItem} (which would build
+     * this automatically). Without it, {@code Tool.isCorrectForDrops()} - consulted internally by
+     * {@code Block.getDrops()} - defaults to "not correct for drops" for every block, which is
+     * silent (no exception, no log warning) and was the real cause of a real bug: enchantments
+     * (Fortune...) being ignored and tier-gated blocks (e.g. diamond ore) dropping nothing at all
+     * when broken by the hammer's area-of-effect. Covers the same 4 tags vanilla's own tools use
+     * (pickaxe/shovel/axe/hoe) so drops behave correctly regardless of which kind of block the
+     * hammer happens to hit. {@code Registry#getOrCreateTag} is used specifically because this runs
+     * at mod-init time, before tags are loaded - it returns a live reference that gets filled in
+     * once tags are ready, rather than requiring them to already exist (see the class javadoc on
+     * why this whole scan-and-register step already has to run this early).
+     */
+    private static Tool buildToolComponent(float speed) {
+        List<Tool.Rule> rules = List.of(
+                new Tool.Rule(BuiltInRegistries.BLOCK.getOrCreateTag(BlockTags.MINEABLE_WITH_PICKAXE), Optional.of(speed), Optional.of(true)),
+                new Tool.Rule(BuiltInRegistries.BLOCK.getOrCreateTag(BlockTags.MINEABLE_WITH_SHOVEL), Optional.of(speed), Optional.of(true)),
+                new Tool.Rule(BuiltInRegistries.BLOCK.getOrCreateTag(BlockTags.MINEABLE_WITH_AXE), Optional.of(speed), Optional.of(true)),
+                new Tool.Rule(BuiltInRegistries.BLOCK.getOrCreateTag(BlockTags.MINEABLE_WITH_HOE), Optional.of(speed), Optional.of(true))
+        );
+        return new Tool(rules, 1.0f, 1, false);
     }
 
     public boolean canSmelt() {

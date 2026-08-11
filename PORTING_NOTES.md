@@ -261,6 +261,40 @@ marteau fiery, `Block.getDrops(state, level, pos, blockEntity, player, tool)` - 
 réel en compte pour les enchantements et le palier requis - suivi de la fonte optionnelle bloc par bloc
 selon `data.canSmelt()`.
 
+## La vraie cause du bug Fortune/butin manquant : composant `minecraft:tool` jamais posé
+
+Le fix précédent (`Block.getDrops(..., tool)`) était nécessaire mais pas suffisant - confirmé par un
+test réel : bloc de minerai de diamant cassé par la zone du marteau, disparu, mais **zéro** diamant
+lâché, sans la moindre ligne dans les logs. Cause trouvée après avoir recoupé plusieurs sources
+externes (recherche + vraie source Java compilable dans les tests de `fabric-item-api-v1`, voir
+`ModifyComponentsInPropertiesTestSetup.java`) : depuis la refonte des outils en composants de données
+(1.21+), qu'un outil soit "correct pour le butin" sur un bloc donné (ce qui gouverne si Fortune/Sac de
+nœuds s'appliquent, et si les blocs à palier requis comme le minerai de diamant lâchent quoi que ce
+soit) est déterminé par le composant `minecraft:tool` (`Tool` + liste de `Tool.Rule`), consulté en
+interne par `Block.getDrops()`. Les classes vanilla comme `PickaxeItem`/`DiggerItem` posent ce
+composant automatiquement dans leur constructeur - mais `HammerItem` étend `Item` directement (à cause
+de la logique de minage custom), donc n'avait **aucun** composant `tool` du tout. Résultat : chaque
+bloc était silencieusement traité comme "mauvais outil" par `Block.getDrops()`, indépendamment de
+`isCorrectToolFor()` (notre propre vérification, qui ne fait que décider si on tente de casser le bloc
+du tout, complètement séparée de cette histoire de composant).
+
+Corrigé en construisant le composant `minecraft:tool` à la main dans `HammerData.register()`
+(`buildToolComponent()`), avec une règle par tag `MINEABLE_WITH_{PICKAXE,SHOVEL,AXE,HOE}` marquée
+`correctForDrops: true` - couvre tous les blocs que ces 4 outils vanilla peuvent normalement casser,
+peu importe lequel le marteau touche. Construit via `Registry#getOrCreateTag(TagKey)` plutôt que
+`HolderLookup.Provider#getOrThrow` - le premier renvoie une référence "vide puis remplie plus tard",
+utilisable avant que les tags soient chargés (contrairement au second qui exige que le tag existe déjà
+au moment de l'appel) ; nécessaire ici puisque tout ce fichier tourne au moment de l'initialisation du
+mod, avant les tags (voir la javadoc de la classe). La vitesse de minage définie dans chaque règle n'a
+pas d'effet réel sur le jeu telle quelle car `HammerItem.getDestroySpeed()` la court-circuite déjà avec
+une valeur uniforme - seul le `correctForDrops: true` compte vraiment ici, la vitesse est juste posée
+par cohérence.
+
+**Best-effort / pas confirmé sur cette version précise** : signatures de `Tool`/`Tool.Rule` et
+`Registry#getOrCreateTag` basées sur une vraie source Java qui compile dans le dépôt `fabric-item-api-v1`
+de Fabric API (pas une simple supposition), mais pas testées en conditions réelles sur 26.2 avant le
+prochain retour de compilation/jeu.
+
 ## Versions retenues
 
 Mêmes versions que le portage Adabranium (déjà confirmées par une compilation + un lancement
